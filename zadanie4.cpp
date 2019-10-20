@@ -5,6 +5,7 @@ using namespace std;
 int main()
 {
 //Mateusz Hinca
+
 //Mariusz Krzyżopolski
     int x =0;
     int i =0;
