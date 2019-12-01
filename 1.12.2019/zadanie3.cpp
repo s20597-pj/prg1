@@ -12,17 +12,13 @@ int main()
     int numberOfPlayers=0;
     string tmpPlayerName;
     string tmpClassName;
-
-    cout << "Number of players: ";
     cin >> numberOfPlayers;
     string TabOfPlayers[numberOfPlayers];
-    cout << "List of classes:"<<endl;
     for(int i = 0; i<numberOfPlayers; i++)
     {
         cin >> tmpClassName;
         TabOfClasses.push_back(tmpClassName);
     }
-    cout << "List of players:"<<endl;
     for(int i = 0; i<numberOfPlayers; i++)
     {
         cin >> tmpPlayerName;
