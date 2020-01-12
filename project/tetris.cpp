@@ -48,6 +48,7 @@ bool playerCanMoveLeft();
 bool playerCanMoveDown();
 bool playerCanRotate();
 void checkForLines();
+int getColorBySymbolName(char symbol);
 void addPoints();
 void drawNextTetromino();
 void randomizeNextTetromino();
@@ -60,262 +61,318 @@ bool playerHaveFreeSpaceOnTop(int passNormalizedY[], int passNormalizedX[]);
 void tetrominoTouchFloor();
 void resetPlayer();
 int main() {
-	    prepare();
-	        while(true) {
-				 setNormalizedValues();
-				         if(!gameOver)draw();
-					         keyboardHandler();
-						         if(gameTime>100)
-								             gameTick();
-							         if(userInput==-1)gameTime++;
-								 		move(0,2);
-												if(gameOver)printw("GAMEOVER");
-												        refresh();
-														};
-		    return 1;
+    prepare();
+    while(true) {
+        setNormalizedValues();
+        draw();
+        keyboardHandler();
+        if(gameTime>100)
+            gameTick();
+        if(userInput==-1)gameTime++;
+        move(0,2);
+        if(gameOver)	{
+            endwin();
+            printf("\n\n\n\n\n\t\t\tGAME OVER\n\t\t\tPOINTS: %i\n\n\n\n\n",points);
+            printf("\n\n\n\n\n\t\t\tco to bylo\n\t\t\tPOINTS: %i\n\n\n\n\n",gameMap[4][5]);
+            exit(1);
+        }
+        refresh();
+    };
+    return 1;
 };
 
 void prepare() {
-	srand(time(NULL));
-	    fillMap();
-	    	currentTetromino=(rand() % 7);
-			randomizeNextTetromino();
-			    initscr();
-			        noecho();
-				    cbreak();
-				        keypad(stdscr, TRUE);
-					    curs_set(0);
-					        timeout(5);//wait for user input, else go into next function
+    srand(time(NULL));
+    fillMap();
+    currentTetromino=(rand() % 7);
+    randomizeNextTetromino();
+    initscr();
+    if(has_colors() == FALSE)
+    {   endwin();
+        printf("Your terminal does not support color\n");
+        exit(1);
+    }
+    start_color();
+    init_pair(1,COLOR_YELLOW,COLOR_YELLOW);
+    init_pair(2,COLOR_CYAN,COLOR_CYAN);
+    init_pair(3,COLOR_RED,COLOR_RED);
+    init_pair(4,COLOR_MAGENTA,COLOR_MAGENTA);
+    init_pair(5,COLOR_BLUE,COLOR_BLUE);
+    init_pair(6,COLOR_GREEN,COLOR_GREEN);
+    init_pair(7,COLOR_WHITE,COLOR_WHITE);
+    noecho();
+    cbreak();
+    keypad(stdscr, TRUE);
+    curs_set(0);
+    timeout(5);//wait for user input, else go into next function
 };
 void fillMap() {
-	    for(int i=0; i<26; i++) {
-		            for(int j=0; j<16; j++) {
-				                gameMap[i][j]=-1;
-						        }
-			        }
+    for(int i=0; i<26; i++) {
+        for(int j=0; j<16; j++) {
+            gameMap[i][j]=-1;
+        }
+    }
 }
 void setNormalizedValues() {
-	    string currentTetrominoTMP = allTetrominos[currentTetromino][currentRotation];
-	        for(int i=0; i<currentTetrominoTMP.length()/2; i++) {
-			        int pos = i*2;
-				        string y=currentTetrominoTMP.substr(pos,1);
-					        string x=currentTetrominoTMP.substr(pos+1,1);
-						        normalizedX[i] = stoi(x);
-							        normalizedY[i]  = stoi(y);
-								    }
+    string currentTetrominoTMP = allTetrominos[currentTetromino][currentRotation];
+    for(int i=0; i<currentTetrominoTMP.length()/2; i++) {
+        int pos = i*2;
+        string y=currentTetrominoTMP.substr(pos,1);
+        string x=currentTetrominoTMP.substr(pos+1,1);
+        normalizedX[i] = stoi(x);
+        normalizedY[i]  = stoi(y);
+    }
 }
 void draw() {
-	    erase();
-	        drawBoard();
-			drawNextTetromino();
-			    drawGameMap();
-			        drawCurrentTetromino();
-				    refresh();
+    erase();
+    drawBoard();
+    drawNextTetromino();
+    drawGameMap();
+    drawCurrentTetromino();
+    refresh();
 }
 void drawBoard() {
-	    for(int i =0; i<20; i++) {
-		            move(i,10);
-			            addch(gameBlock);
-				        }
+    for(int i =0; i<20; i++) {
+        move(i,10);
+        addch(gameBlock);
+    }
 };
 void drawGameMap() {
-	    for(int i=3; i<24; i++) {
-		            for(int j=3; j<14; j++) {
-				                move(i-3,j-3);
-						            if(gameMap[i][j]!=-1) {
-								                    addch(gameMap[i][j]);
-										                }
-							            }
-			        }
-	    	move(8,30);
-			printw("Score: %i",points);
+    for(int i=3; i<24; i++) {
+        for(int j=3; j<14; j++) {
+            move(i-3,j-3);
+            if(gameMap[i][j]!=-1) {
+                attron(COLOR_PAIR(getColorBySymbolName(gameMap[i][j])));
+                addch(gameMap[i][j]);
+                attroff(COLOR_PAIR(getColorBySymbolName(gameMap[i][j])));
+            }
+        }
+    }
+    move(8,30);
+    printw("Score: %i",points);
 }
-void drawNextTetromino(){
-		string nextTetrominoTMP = allTetrominos[nextTetromino][0];
-			move(3,30);
-				  for(int i=0; i<4; i++) {
-					  	          int pos = i*2;
-							  		string y=nextTetrominoTMP.substr(pos,1);
-									        string x=nextTetrominoTMP.substr(pos+1,1);
-										        move(3+stoi(y),30+stoi(x));
-											        addch(tetrominoChars[nextTetromino]);
-												    }
+void drawNextTetromino() {
+    string nextTetrominoTMP = allTetrominos[nextTetromino][0];
+    move(2,30);
+    printw("Next tetromino:");
+    for(int i=0; i<4; i++) {
+        int pos = i*2;
+        string y=nextTetrominoTMP.substr(pos,1);
+        string x=nextTetrominoTMP.substr(pos+1,1);
+        move(3+stoi(y),30+stoi(x));
+        attron(COLOR_PAIR(nextTetromino+1));
+        addch(tetrominoChars[nextTetromino]);
+        attroff(COLOR_PAIR(nextTetromino+1));
+    }
 }
 void drawCurrentTetromino() {
 
-	    for(int i=0; i<4; i++) {
-		            move(playerY+normalizedY[i],playerX+normalizedX[i]);
-			            addch(tetrominoChars[currentTetromino]);
-				        }
+    for(int i=0; i<4; i++) {
+        move(playerY+normalizedY[i],playerX+normalizedX[i]);
+        attron(COLOR_PAIR(currentTetromino+1));
+        addch(tetrominoChars[currentTetromino]);
+        attroff(COLOR_PAIR(currentTetromino+1));
+    }
 }
-void randomizeNextTetromino(){
-		nextTetromino=(rand() % 7);
+void randomizeNextTetromino() {
+    nextTetromino=(rand() % 7);
 }
 void gameTick() {
-	    clear();
-	        gameTime=0;
-		    if(playerCanMoveDown()&&!playerHaveFreeSpaceOnBottom(normalizedY,normalizedX)) {
-			            playerY++;
-				        }
-		        else {
-				        tetrominoTouchFloor();
-							checkForLines();
-									checkForGameOver();
-									        resetPlayer();
-										    }
+    clear();
+    gameTime=0;
+    if(playerCanMoveDown()&&!playerHaveFreeSpaceOnBottom(normalizedY,normalizedX)) {
+        playerY++;
+    }
+    else {
+        tetrominoTouchFloor();
+        checkForLines();
+        checkForGameOver();
+        resetPlayer();
+    }
 
 };
-void checkForLines(){
-		for(int i=0;i<24;i++){
-					if(checkLine(i)){
-									destroyLine(i);
-												comboMultiplayer=(comboMultiplayer+1)*2;
-															moveMapOneDown(i);
-																		addPoints();
-																				}
-						}
-			comboMultiplayer=0;
+void checkForLines() {
+    for(int i=0; i<24; i++) {
+        if(checkLine(i)) {
+            destroyLine(i);
+            comboMultiplayer=(comboMultiplayer+1)*2;
+            moveMapOneDown(i);
+            addPoints();
+        }
+    }
+    comboMultiplayer=0;
 }
-bool checkLine(int i){
-		for(int j=3;j<13;j++){
-					if(gameMap[i][j]==-1){return false;}
-						}
-			return true;
+bool checkLine(int i) {
+    for(int j=3; j<13; j++) {
+        if(gameMap[i][j]==-1) {
+            return false;
+        }
+    }
+    return true;
 }
-void checkForGameOver(){
-		for(int i=3;i<24;i++){
-					if(gameMap[2][i]!=-1){
-								gameOver=true;
-										}
-						}
+void checkForGameOver() {
+    for(int i=3; i<24; i++) {
+        if(gameMap[2][i]!=-1) {
+            gameOver=true;
+        }
+    }
 }
-void destroyLine(int i){
-		for(int j=3;j<14;j++){
-					gameMap[i][j]=-1;
-						}
-			}
+void destroyLine(int i) {
+    for(int j=3; j<14; j++) {
+        gameMap[i][j]=-1;
+    }
+}
 void resetPlayer() {
-	    playerX=0;
-	        playerY=-1;
-			currentRotation=0;
-				currentTetromino=nextTetromino;
-					randomizeNextTetromino();
+    playerX=0;
+    playerY=-1;
+    currentRotation=0;
+    currentTetromino=nextTetromino;
+    randomizeNextTetromino();
 }
-void addPoints(){
-		points=(pointsForLine*comboMultiplayer)+points;
+void addPoints() {
+    points=(pointsForLine*comboMultiplayer)+points;
 }
 void tetrominoTouchFloor() {
-	    for(int i=0; i<4; i++) {
-		            gameMap[normalizedY[i]+playerY+3][normalizedX[i]+playerX+3]=tetrominoChars[currentTetromino];
-			        }
+    for(int i=0; i<4; i++) {
+        gameMap[normalizedY[i]+playerY+3][normalizedX[i]+playerX+3]=tetrominoChars[currentTetromino];
+    }
 }
-void moveMapOneDown(int startPoint){
-		 for(int i=startPoint; i<3; i=i-1) {
-			         for(int j=3; j<14; j++) {
-					 			gameMap[i][j]=gameMap[i+1][j];
-										}}
+void moveMapOneDown(int startPoint) {
+    for(int i=startPoint; i<3; i=i-1) {
+        for(int j=3; j<14; j++) {
+            gameMap[i][j]=gameMap[i+1][j];
+        }
+    }
 }
 bool playerCanMoveRight() {
-	    for(int i=0; i<4; i++) {
-		            if(normalizedX[i]+playerX+1>=width) {
-				                return false;
-						        };
-			        }
-	        return true;
+    for(int i=0; i<4; i++) {
+        if(normalizedX[i]+playerX+1>=width) {
+            return false;
+        };
+    }
+    return true;
 };
 bool playerCanMoveLeft() {
-	    for(int i=0; i<4; i++) {
-		            if(normalizedX[i]+playerX-1<0) {
-				                return false;
-						        };
-			        }
-	        return true;
+    for(int i=0; i<4; i++) {
+        if(normalizedX[i]+playerX-1<0) {
+            return false;
+        };
+    }
+    return true;
 };
 bool playerCanMoveDown() {
-	    for(int i=0; i<4; i++) {
-		            if(normalizedY[i]+playerY+1>=height) {
-				                return false;
-						        };
-			        }
-	        return true;
+    for(int i=0; i<4; i++) {
+        if(normalizedY[i]+playerY+1>=height) {
+            return false;
+        };
+    }
+    return true;
 };
 bool playerHaveFreeSpaceOnRight(int passNormalizedY[], int passNormalizedX[]) {
-	    for(int i=0; i<4; i++) {
-		            if(gameMap[passNormalizedY[i]+playerY+3][passNormalizedX[i]+playerX+1+3]!=-1) {
-				                return true;
-						        }
-			        }
-	        return false;
+    for(int i=0; i<4; i++) {
+        if(gameMap[passNormalizedY[i]+playerY+3][passNormalizedX[i]+playerX+1+3]!=-1) {
+            return true;
+        }
+    }
+    return false;
 }
 bool playerHaveFreeSpaceOnLeft(int passNormalizedY[], int passNormalizedX[]) {
-	    for(int i=0; i<4; i++) {
-		            if(gameMap[passNormalizedY[i]+playerY+3][passNormalizedX[i]+playerX-1+3]!=-1) {
-				                return true;
-						        }
-			        }
-	        return false;
+    for(int i=0; i<4; i++) {
+        if(gameMap[passNormalizedY[i]+playerY+3][passNormalizedX[i]+playerX-1+3]!=-1) {
+            return true;
+        }
+    }
+    return false;
 }
 bool playerHaveFreeSpaceOnBottom(int passNormalizedY[], int passNormalizedX[]) {
-	    for(int i=0; i<4; i++) {
-		            if(gameMap[passNormalizedY[i]+playerY+1+3][passNormalizedX[i]+playerX+3]!=-1) {
-				                return true;
-						        }
-			        }
-	        return false;
+    for(int i=0; i<4; i++) {
+        if(gameMap[passNormalizedY[i]+playerY+1+3][passNormalizedX[i]+playerX+3]!=-1) {
+            return true;
+        }
+    }
+    return false;
 }
 bool playerHaveFreeSpaceOnTop(int passNormalizedY[], int passNormalizedX[]) {
-	    for(int i=0; i<4; i++) {
-		            if(gameMap[passNormalizedY[i]+playerY-1+3][passNormalizedX[i]+playerX+3]!=-1) {
-				                return true;
-						        }
-			        }
-	        return false;
+    for(int i=0; i<4; i++) {
+        if(gameMap[passNormalizedY[i]+playerY-1+3][passNormalizedX[i]+playerX+3]!=-1) {
+            return true;
+        }
+    }
+    return false;
 }
 bool playerCanRotate() {
-	    string currentTetrominoTMP = allTetrominos[currentTetromino][(currentRotation+1)%4];
-	        int tmpNormalizedArrX[4]= {};
-		    int tmpNormalizedArrY[4]= {};
-		        for(int i=0; i<currentTetrominoTMP.length()/2; i++) {
-				        int pos = i*2;
-					        string y=currentTetrominoTMP.substr(pos,1);
-						        string x=currentTetrominoTMP.substr(pos+1,1);
-							        tmpNormalizedArrX[i] = stoi(x);
-								        tmpNormalizedArrY[i]  = stoi(y);
-									    }
-			    if(!playerHaveFreeSpaceOnBottom(tmpNormalizedArrY,tmpNormalizedArrX)&&!playerHaveFreeSpaceOnLeft(tmpNormalizedArrY,tmpNormalizedArrX)&&!playerHaveFreeSpaceOnRight(tmpNormalizedArrY,tmpNormalizedArrX)&&!playerHaveFreeSpaceOnTop(tmpNormalizedArrY,tmpNormalizedArrX)) {
-				            for(int i=0; i<4; i++) {
-						                if(tmpNormalizedArrY[i]+playerY>=height || tmpNormalizedArrX[i]+playerX<0 || tmpNormalizedArrX[i]+playerX>width-1) {
-									                return false;
-											            }
-								        }
-					        }
+    string currentTetrominoTMP = allTetrominos[currentTetromino][(currentRotation+1)%4];
+    int tmpNormalizedArrX[4]= {};
+    int tmpNormalizedArrY[4]= {};
+    for(int i=0; i<currentTetrominoTMP.length()/2; i++) {
+        int pos = i*2;
+        string y=currentTetrominoTMP.substr(pos,1);
+        string x=currentTetrominoTMP.substr(pos+1,1);
+        tmpNormalizedArrX[i] = stoi(x);
+        tmpNormalizedArrY[i]  = stoi(y);
+    }
+    if(!playerHaveFreeSpaceOnBottom(tmpNormalizedArrY,tmpNormalizedArrX)&&!playerHaveFreeSpaceOnLeft(tmpNormalizedArrY,tmpNormalizedArrX)&&!playerHaveFreeSpaceOnRight(tmpNormalizedArrY,tmpNormalizedArrX)&&!playerHaveFreeSpaceOnTop(tmpNormalizedArrY,tmpNormalizedArrX)) {
+        for(int i=0; i<4; i++) {
+            if(tmpNormalizedArrY[i]+playerY>=height || tmpNormalizedArrX[i]+playerX<0 || tmpNormalizedArrX[i]+playerX>width-1) {
+                return false;
+            }
+        }
+    }
 
-			        return true;
+    return true;
 };
 void keyboardHandler() {
-	    userInput=getch();
-	        if(userInput==KEY_RIGHT) {
-			        if(playerCanMoveRight()&&!playerHaveFreeSpaceOnRight(normalizedY,normalizedX)) {
-					            playerX++;
-						            };
-				    }
-		    else if(userInput==KEY_LEFT) {
-			            if(playerCanMoveLeft()&&!playerHaveFreeSpaceOnLeft(normalizedY,normalizedX)) {
-					                playerX--;
-							        };
-				        }
-		        else if(userInput==KEY_DOWN) {
-				        if(playerCanMoveDown()&&!playerHaveFreeSpaceOnBottom(normalizedY,normalizedX)) {
-						            playerY++;
-							            };
-					    }
-			    else if(userInput==KEY_UP) {
-				            if(playerCanRotate()) {
-						                currentRotation=(currentRotation+1)%4;
-								        };
-					        }
-			        else if(userInput==102) {
-					        currentTetromino=(currentTetromino+1)%7;
-						    }
+    userInput=getch();
+    if(userInput==KEY_RIGHT) {
+        if(playerCanMoveRight()&&!playerHaveFreeSpaceOnRight(normalizedY,normalizedX)) {
+            playerX++;
+        };
+    }
+    else if(userInput==KEY_LEFT) {
+        if(playerCanMoveLeft()&&!playerHaveFreeSpaceOnLeft(normalizedY,normalizedX)) {
+            playerX--;
+        };
+    }
+    else if(userInput==KEY_DOWN) {
+        while(playerCanMoveDown()&&!playerHaveFreeSpaceOnBottom(normalizedY,normalizedX)) {
+            playerY++;
+        };
+    }
+    else if(userInput==KEY_UP) {
+        if(playerCanRotate()) {
+            currentRotation=(currentRotation+1)%4;
+        };
+    }
+    else if(userInput==102) {
+        currentTetromino=(currentTetromino+1)%7;
+    }
 
-}                                                                                                                                                                                                                                                              
+}
+
+int getColorBySymbolName(char symbol) {
+    switch(symbol) {
+    case 'I':
+        return 1;
+        break;
+    case 'J':
+        return 2;
+        break;
+    case 'L':
+        return 3;
+        break;
+    case 'O':
+        return 4;
+        break;
+    case 'S':
+        return 5;
+        break;
+    case 'T':
+        return 6;
+        break;
+    case 'Z':
+        return 7;
+        break;
+    default:
+        return 1;
+    }
+}
