@@ -237,9 +237,9 @@ void tetrominoTouchFloor() {
     }
 }
 void moveMapOneDown(int startPoint) {
-    for(int i=startPoint; i<3; i=i-1) {
+    for(int i=startPoint; i>3; i=i-1) {
         for(int j=3; j<14; j++) {
-            gameMap[i][j]=gameMap[i+1][j];
+            gameMap[i][j]=gameMap[i-1][j];
         }
     }
 }
