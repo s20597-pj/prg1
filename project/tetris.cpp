@@ -70,10 +70,9 @@ int main() {
             gameTick();
         if(userInput==-1)gameTime++;
         move(0,2);
-        if(gameOver)	{
+        if(gameOver)    {
             endwin();
             printf("\n\n\n\n\n\t\t\tGAME OVER\n\t\t\tPOINTS: %i\n\n\n\n\n",points);
-            printf("\n\n\n\n\n\t\t\tco to bylo\n\t\t\tPOINTS: %i\n\n\n\n\n",gameMap[4][5]);
             exit(1);
         }
         refresh();
